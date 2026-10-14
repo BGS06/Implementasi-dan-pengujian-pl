@@ -1,0 +1,177 @@
+// prisma/schema.prisma
+// Database: Supabase PostgreSQL (Connection Pooling + Direct URL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+enum MembershipTier {
+  REGULAR
+  VIP
+}
+
+enum CarCategory {
+  CITY_CAR
+  FAMILY_CAR
+  LUXURY_CAR
+  ELECTRIC_CAR
+}
+
+enum CarStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+}
+
+enum TransmissionType {
+  AUTOMATIC
+  MANUAL
+}
+
+enum FuelType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+}
+
+enum PaymentType {
+  BANK_TRANSFER
+  QRIS
+  EWALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                  String          @id @default(uuid()) @db.Uuid
+  name                String
+  email               String          @unique
+  passwordHash        String          @map("password_hash")
+  role                UserRole        @default(CUSTOMER)
+  // Kolom khusus Admin (Single Table Inheritance)
+  department          String?
+  // Kolom khusus Customer + Composition Membership
+  driverLicenseNumber String?         @map("driver_license_number")
+  membershipTier      MembershipTier  @default(REGULAR) @map("membership_tier")
+  loyaltyPoints       Int             @default(0) @map("loyalty_points")
+  bookings            Booking[]
+  aiChatLogs          AiChatLog[]
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Car {
+  id                   String           @id @default(uuid()) @db.Uuid
+  brand                String
+  model                String
+  year                 Int
+  licensePlate         String           @unique @map("license_plate")
+  category             CarCategory
+  baseRatePerDay       Decimal          @map("base_rate_per_day") @db.Decimal(12, 2)
+  seatCapacity         Int              @map("seat_capacity")
+  transmission         TransmissionType @default(AUTOMATIC)
+  fuelType             FuelType         @default(GASOLINE) @map("fuel_type")
+  status               CarStatus        @default(AVAILABLE)
+  imageUrl             String?          @map("image_url")
+  // Atribut spesifik subclass Car (Single Table Inheritance)
+  hasThirdRowSeat      Boolean?         @default(false) @map("has_third_row_seat")
+  luggageLiters        Int?             @map("luggage_liters")
+  chauffeurIncluded    Boolean?         @default(false) @map("chauffeur_included")
+  securityDeposit      Decimal?         @map("security_deposit") @db.Decimal(12, 2)
+  batteryCapacityKwh   Int?             @map("battery_capacity_kwh")
+  rangeKm              Int?             @map("range_km")
+  // Live GPS Tracking (ITrackable state)
+  latitude             Float            @default(-7.2575)
+  longitude            Float            @default(112.7521)
+  speedKmh             Float            @default(0) @map("speed_kmh")
+  lastGpsPing          DateTime         @default(now()) @map("last_gps_ping")
+  bookings             Booking[]
+  gpsLogs              GpsTrackingLog[]
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  @@map("cars")
+}
+
+model Booking {
+  id               String        @id @default(uuid()) @db.Uuid
+  customerId       String        @map("customer_id") @db.Uuid
+  carId            String        @map("car_id") @db.Uuid
+  startDate        DateTime      @map("start_date")
+  endDate          DateTime      @map("end_date")
+  totalDays        Int           @map("total_days")
+  grossAmount      Decimal       @map("gross_amount") @db.Decimal(12, 2)
+  discountAmount   Decimal       @map("discount_amount") @db.Decimal(12, 2)
+  netAmount        Decimal       @map("net_amount") @db.Decimal(12, 2)
+  status           BookingStatus @default(PENDING)
+  customer         User          @relation(fields: [customerId], references: [id])
+  car              Car           @relation(fields: [carId], references: [id])
+  payment          Payment?
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  @@map("bookings")
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  bookingId        String        @unique @map("booking_id") @db.Uuid
+  paymentType      PaymentType   @map("payment_type")
+  amount           Decimal       @db.Decimal(12, 2)
+  status           PaymentStatus @default(PENDING)
+  providerName     String        @map("provider_name") // e.g., BCA, QRIS-NMID, GOPAY
+  paymentReference String        @map("payment_reference") // VA Number / QR String / Phone
+  paidAt           DateTime?     @map("paid_at")
+  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  @@map("payments")
+}
+
+model GpsTrackingLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  carId      String   @map("car_id") @db.Uuid
+  latitude   Float
+  longitude  Float
+  speedKmh   Float    @default(0) @map("speed_kmh")
+  recordedAt DateTime @default(now()) @map("recorded_at")
+  car        Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@map("gps_tracking_logs")
+}
+
+model AiChatLog {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String?  @map("user_id") @db.Uuid
+  userPrompt        String   @map("user_prompt")
+  aiResponseSummary String   @map("ai_response_summary")
+  recommendedCarIds String[] @map("recommended_car_ids")
+  createdAt         DateTime @default(now()) @map("created_at")
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("ai_chat_logs")
+}

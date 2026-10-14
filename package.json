@@ -1,0 +1,32 @@
+{
+  "name": "rentpod-nextjs-oop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^7.10.0",
+    "@react-google-maps/api": "^2.20.8",
+    "@supabase/supabase-js": "^2.117.3",
+    "bcryptjs": "^3.0.3",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.30",
+    "prisma": "^7.10.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "7.0.2"
+  }
+}
