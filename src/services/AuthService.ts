@@ -1,33 +1,32 @@
-// src/services/AuthService.ts
-import { UserRepository } from '../repositories/UserRepository';
-import { User } from '../domain/models/User';
+import { UserRepository } from '@/repositories/UserRepository';
+import { User } from '@/domain/models/User';
+import { UserRole } from '@/domain/interfaces';
 
 export class AuthService {
-  private readonly userRepository: UserRepository;
+  private userRepo = new UserRepository();
 
-  constructor(userRepository: UserRepository = new UserRepository()) {
-    this.userRepository = userRepository;
+  async login(identifier: string, password: string): Promise<User> {
+    const user = await this.userRepo.findByEmailOrPhone(identifier);
+    if (!user) {
+      throw new Error('Akun tidak ditemukan. Silakan periksa email/nomor HP atau daftar baru.');
+    }
+    if (!user.verifyPassword(password)) {
+      throw new Error('Password yang Anda masukkan salah.');
+    }
+    return user;
   }
 
-  public async authenticate(email: string, plainPassword: string): Promise<{
-    user: User;
-    redirectUrl: string;
-    permissions: string[];
-  }> {
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      throw new Error('Email atau kata sandi salah.');
+  async register(params: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    role: UserRole;
+  }): Promise<User> {
+    const existing = await this.userRepo.findByEmailOrPhone(params.email);
+    if (existing) {
+      throw new Error('Email sudah terdaftar. Silakan langsung masuk.');
     }
-
-    const isValid = await user.verifyPassword(plainPassword);
-    if (!isValid) {
-      throw new Error('Email atau kata sandi salah.');
-    }
-
-    return {
-      user,
-      redirectUrl: user.getDashboardRoute(),
-      permissions: user.getPermissions(),
-    };
+    return this.userRepo.create(params);
   }
 }

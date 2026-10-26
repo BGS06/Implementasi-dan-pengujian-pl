@@ -1,119 +1,51 @@
-// src/services/BookingService.ts
-import { randomUUID } from 'crypto';
-import { prisma } from '../lib/supabase';
-import { CarRepository } from '../repositories/CarRepository';
-import { Booking } from '../domain/models/Booking';
-import { Customer } from '../domain/models/User';
-import { MembershipFactory } from '../domain/models/Membership';
-import { PaymentFactory } from '../domain/models/Payment';
-import { PaymentType } from '../domain/interfaces';
-
-export interface CreateBookingDto {
-  customerId: string;
-  carId: string;
-  startDate: string;
-  endDate: string;
-  paymentType: PaymentType;
-  paymentProviderOption: string;
-  customerPhone?: string;
-}
+import { BookingRepository } from '@/repositories/BookingRepository';
+import { CarRepository } from '@/repositories/CarRepository';
+import { UserRepository } from '@/repositories/UserRepository';
+import { Booking } from '@/domain/models/Booking';
 
 export class BookingService {
-  private readonly carRepository: CarRepository;
+  private bookingRepo = new BookingRepository();
+  private carRepo = new CarRepository();
+  private userRepo = new UserRepository();
 
-  constructor(carRepository: CarRepository = new CarRepository()) {
-    this.carRepository = carRepository;
+  async getAllBookings(): Promise<Booking[]> {
+    return this.bookingRepo.findAll();
   }
 
-  public async createBooking(dto: CreateBookingDto) {
-    const userRow = await prisma.user.findUnique({ where: { id: dto.customerId } });
-    if (!userRow || userRow.role !== 'CUSTOMER') {
-      throw new Error('Data pelanggan tidak ditemukan atau tidak valid.');
-    }
+  async createBooking(params: {
+    userId: string;
+    carId: string;
+    startDate: string;
+    endDate: string;
+  }): Promise<Booking> {
+    const car = await this.carRepo.findById(params.carId);
+    if (!car) throw new Error('Mobil tidak ditemukan');
 
-    const car = await this.carRepository.findById(dto.carId);
-    if (!car) {
-      throw new Error('Armada mobil tidak ditemukan.');
-    }
+    const user = await this.userRepo.findById(params.userId);
+    if (!user) throw new Error('User tidak ditemukan');
 
-    // Rekonstruksi objek OOP Customer beserta komposisi Membership-nya
-    const membership = MembershipFactory.create(userRow.membershipTier);
-    const customer = new Customer(
-      userRow.id,
-      userRow.name,
-      userRow.email,
-      userRow.passwordHash,
-      userRow.driverLicenseNumber ?? '-',
-      membership,
-      userRow.loyaltyPoints
+    const start = new Date(params.startDate);
+    const end = new Date(params.endDate);
+    const diffDays = Math.max(
+      1,
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
     );
 
-    // Instansiasi PaymentMethod secara polimorfik via PaymentFactory
-    const paymentGateway = PaymentFactory.create(
-      dto.paymentType,
-      dto.paymentProviderOption,
-      dto.customerPhone
+    const baseCost = car.calculateBaseCost(diffDays);
+    const finalPrice = user.membership.applyDiscount(baseCost);
+
+    const newBooking = new Booking(
+      `bk-${Date.now()}`,
+      user.id,
+      car.id,
+      car.fullName,
+      params.startDate,
+      params.endDate,
+      diffDays,
+      finalPrice,
+      'CONFIRMED'
     );
 
-    // Komposisi objek Booking
-    const bookingId = randomUUID();
-    const bookingDomain = new Booking(
-      bookingId,
-      customer,
-      car,
-      paymentGateway,
-      new Date(dto.startDate),
-      new Date(dto.endDate)
-    );
-
-    const breakdown = bookingDomain.calculateInvoiceBreakdown();
-    const receipt = await bookingDomain.checkout();
-
-    // Simpan transaksi secara atomik ke Supabase PostgreSQL
-    const savedBooking = await prisma.$transaction(async (tx) => {
-      const created = await tx.booking.create({
-        data: {
-          id: bookingId,
-          customerId: customer.getId(),
-          carId: car.getId(),
-          startDate: bookingDomain.getStartDate(),
-          endDate: bookingDomain.getEndDate(),
-          totalDays: breakdown.totalDays,
-          grossAmount: breakdown.grossAmount,
-          discountAmount: breakdown.discountAmount,
-          netAmount: breakdown.netAmount,
-          status: 'ACTIVE',
-          payment: {
-            create: {
-              paymentType: dto.paymentType,
-              amount: breakdown.netAmount,
-              status: 'PAID',
-              providerName: receipt.provider,
-              paymentReference: receipt.paymentCodeOrQr,
-              paidAt: new Date(),
-            },
-          },
-        },
-        include: { payment: true, car: true },
-      });
-
-      await tx.car.update({
-        where: { id: car.getId() },
-        data: { status: 'RENTED' },
-      });
-
-      await tx.user.update({
-        where: { id: customer.getId() },
-        data: { loyaltyPoints: customer.getLoyaltyPoints() },
-      });
-
-      return created;
-    });
-
-    return {
-      booking: savedBooking,
-      invoiceBreakdown: breakdown,
-      paymentReceipt: receipt,
-    };
+    return this.bookingRepo.create(newBooking);
   }
 }

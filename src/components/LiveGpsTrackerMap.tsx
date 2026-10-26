@@ -1,133 +1,88 @@
-// src/components/LiveGpsTrackerMap.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { GoogleMap, MarkerF, InfoWindowF, useJsApiLoader } from '@react-google-maps/api';
-import { supabaseClient } from '@/lib/supabase';
 
-interface FleetMarker {
+interface GpsPoint {
   carId: string;
-  fullName: string;
-  licensePlate: string;
-  status: string;
   latitude: number;
   longitude: number;
   speedKmh: number;
-  isOutOfBounds: boolean;
-  distanceFromPoolKm: number;
-  lastUpdated: string;
+  updatedAt: string;
 }
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '480px',
-  borderRadius: '1rem',
-};
+export default function LiveGpsTrackerMap() {
+  const [coords, setCoords] = useState<GpsPoint[]>([]);
 
-const defaultCenter = {
-  lat: -7.2575,
-  lng: 112.7521,
-};
-
-/**
- * Komponen Live GPS Tracking untuk Admin (Diadaptasi dari RentPod lama + Supabase Realtime)
- */
-export default function LiveGpsTrackerMap({ initialFleet }: { initialFleet: FleetMarker[] }) {
-  const [fleet, setFleet] = useState<FleetMarker[]>(initialFleet);
-  const [selectedCar, setSelectedCar] = useState<FleetMarker | null>(null);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  });
+  const fetchGps = async () => {
+    try {
+      const res = await fetch('/api/gps');
+      const json = await res.json();
+      if (json.data) setCoords(json.data);
+    } catch {
+      // ignore polling error
+    }
+  };
 
   useEffect(() => {
-    // Subscribe ke perubahan tabel `cars` di Supabase secara real-time
-    const channel = supabaseClient
-      .channel('realtime-fleet-gps')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'cars' },
-        (payload) => {
-          const updated = payload.new as any;
-          setFleet((prev) =>
-            prev.map((item) =>
-              item.carId === updated.id
-                ? {
-                    ...item,
-                    latitude: Number(updated.latitude),
-                    longitude: Number(updated.longitude),
-                    speedKmh: Number(updated.speed_kmh ?? 0),
-                    status: updated.status,
-                    lastUpdated: new Date().toISOString(),
-                  }
-                : item
-            )
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabaseClient.removeChannel(channel);
-    };
+    fetchGps();
+    const interval = setInterval(fetchGps, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  if (!isLoaded) {
-    return (
-      <div className="flex h-96 items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-500">
-        Memuat Peta Live GPS Tracking...
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="bobo-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <h3 className="text-lg font-bold text-slate-900">Live Fleet GPS Tracking (Supabase Realtime)</h3>
-          <p className="text-xs text-slate-500">
-            Memantau posisi, kecepatan, dan radius operasional seluruh mobil secara langsung.
-          </p>
+          <h3 style={{ margin: 0, fontSize: 18 }}>📍 Live Fleet GPS Telemetry</h3>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Pemantauan koordinat armada real-time</span>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-          Realtime Active ({fleet.length} Unit)
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            background: '#dcfce7',
+            color: '#15803d',
+            padding: '6px 12px',
+            borderRadius: 999
+          }}
+        >
+          ● Live 4s
         </span>
       </div>
 
-      <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={11}>
-        {fleet.map((car) => (
-          <MarkerF
-            key={car.carId}
-            position={{ lat: car.latitude, lng: car.longitude }}
-            onClick={() => setSelectedCar(car)}
-          />
-        ))}
-
-        {selectedCar && (
-          <InfoWindowF
-            position={{ lat: selectedCar.latitude, lng: selectedCar.longitude }}
-            onCloseClick={() => setSelectedCar(null)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+        {coords.map((pt) => (
+          <div
+            key={pt.carId}
+            style={{
+              background: '#f5f8f7',
+              padding: 14,
+              borderRadius: 16,
+              border: '1px solid #e2e8f0'
+            }}
           >
-            <div className="p-1 text-xs text-slate-800">
-              <p className="font-bold text-slate-900">{selectedCar.fullName}</p>
-              <p className="text-slate-500">Plat: {selectedCar.licensePlate}</p>
-              <p className="mt-1">
-                Kecepatan: <strong>{selectedCar.speedKmh} km/jam</strong>
-              </p>
-              <p>
-                Jarak dari Pool: <strong>{selectedCar.distanceFromPoolKm} km</strong>
-              </p>
-              {selectedCar.isOutOfBounds && (
-                <p className="mt-1 font-bold text-red-600">
-                  PERINGATAN: Melewati batas radius operasional!
-                </p>
-              )}
+            <div style={{ fontWeight: 800, color: '#007f71', marginBottom: 6 }}>
+              🚗 Unit: {pt.carId.toUpperCase()}
             </div>
-          </InfoWindowF>
-        )}
-      </GoogleMap>
+            <div style={{ fontSize: 12.5, color: '#475569' }}>Latitude: {pt.latitude}</div>
+            <div style={{ fontSize: 12.5, color: '#475569' }}>Longitude: {pt.longitude}</div>
+            <div
+              style={{
+                display: 'inline-block',
+                marginTop: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0f2926',
+                background: '#e6f6f4',
+                padding: '3px 10px',
+                borderRadius: 999
+              }}
+            >
+              ⚡ {pt.speedKmh} km/jam
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

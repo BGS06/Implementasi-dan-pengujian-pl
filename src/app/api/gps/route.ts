@@ -1,39 +1,22 @@
-// src/app/api/gps/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { CarRepository } from '@/repositories/CarRepository';
+import { GpsCoordinate } from '@/domain/models/GpsCoordinate';
 
 const carRepo = new CarRepository();
 
 export async function GET() {
-  try {
-    const cars = await carRepo.findAll(false);
-    const telemetryList = cars.map((car) => ({
-      carId: car.getId(),
-      fullName: car.getFullName(),
-      category: car.getCategory(),
-      status: car.getStatus(),
-      ...car.getTrackingTelemetry(),
-    }));
-    return NextResponse.json({ fleetTelemetry: telemetryList });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  try {
-    const { carId, latitude, longitude, speedKmh = 0 } = await req.json();
-    const updatedCar = await carRepo.updateGpsLocation(
-      carId,
-      Number(latitude),
-      Number(longitude),
-      Number(speedKmh)
+  const cars = await carRepo.findAll();
+  const coordinates = cars.map((car) => {
+    const jitterLat = (Math.random() - 0.5) * 0.004;
+    const jitterLng = (Math.random() - 0.5) * 0.004;
+    const speed = Math.floor(25 + Math.random() * 45);
+    return new GpsCoordinate(
+      car.id,
+      Number((car.latitude + jitterLat).toFixed(5)),
+      Number((car.longitude + jitterLng).toFixed(5)),
+      speed
     );
-    return NextResponse.json({
-      message: 'Koordinat GPS berhasil diperbarui',
-      telemetry: updatedCar.getTrackingTelemetry(),
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+  });
+
+  return NextResponse.json({ data: coordinates });
 }

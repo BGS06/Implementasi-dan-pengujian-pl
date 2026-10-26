@@ -1,29 +1,16 @@
-// src/app/api/ai-advisor/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { AICarAdvisorService } from '@/services/AICarAdvisorService';
-import { MembershipFactory } from '@/domain/models/Membership';
-import { MembershipTier } from '@/domain/interfaces';
 
-export async function POST(req: NextRequest) {
+const advisorService = new AICarAdvisorService();
+
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const { prompt, rentalDays = 3, membershipTier = 'REGULAR', userId } = body;
-
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: 'Prompt kebutuhan mobil wajib diisi.' },
-        { status: 400 }
-      );
-    }
-
-    const membership = MembershipFactory.create(membershipTier as MembershipTier);
-    const aiAdvisorService = new AICarAdvisorService();
-    const result = await aiAdvisorService.recommendCars(prompt, Number(rentalDays), membership, userId);
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
+    const { message } = await request.json();
+    const reply = await advisorService.getRecommendation(message || '');
+    return NextResponse.json({ reply });
+  } catch {
     return NextResponse.json(
-      { error: error.message || 'Terjadi kesalahan saat memproses rekomendasi AI.' },
+      { reply: 'Maaf, layanan AI Advisor sedang sibuk.' },
       { status: 500 }
     );
   }
