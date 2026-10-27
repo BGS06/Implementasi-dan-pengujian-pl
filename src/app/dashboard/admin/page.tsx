@@ -129,18 +129,24 @@ export default function AdminDashboardPage() {
         }}
       >
         <div>
+          {/* Badge bersih sesuai referensi gambar */}
           <span
             style={{
+              display: 'inline-flex',
+              alignItems: 'center',
               background: '#00a896',
-              padding: '5px 14px',
+              color: '#ffffff',
+              padding: '6px 16px',
               borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 800
+              fontSize: 13,
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase'
             }}
           >
-            🛠️ PANEL KONTROL ADMIN HOST
+            🛠️ Panel Kontrol Admin Host
           </span>
-          <h2 style={{ margin: '12px 0 4px', fontSize: 28 }}>Selamat Bertugas, {adminUser.name}</h2>
+          <h2 style={{ margin: '14px 0 4px', fontSize: 28 }}>Selamat Bertugas, {adminUser.name}</h2>
           <p style={{ margin: 0, color: '#ccfbf1', fontSize: 14 }}>
             Kelola ketersediaan unit kendaraan, verifikasi pesanan penyewa, dan pantau telemetri GPS.
           </p>
@@ -327,7 +333,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Live GPS Fleet Tracker untuk Admin */}
       <LiveGpsTrackerMap />
     </div>
   );

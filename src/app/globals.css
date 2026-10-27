@@ -5,12 +5,11 @@
   --bobo-teal-dark: #007f71;
   --bobo-teal-light: #e6f6f4;
   --bobo-forest: #0f2926;
-  --bobo-bg: #f5f8f7;
+  --bobo-bg: #fafafa; /* Background abu-abu sangat terang */
   --bobo-surface: #ffffff;
   --bobo-text: #1e293b;
   --bobo-muted: #64748b;
   --bobo-border: #e2e8f0;
-  --bobo-accent: #ff7a00;
   --shadow-sm: 0 4px 14px rgba(15, 41, 38, 0.05);
   --shadow-md: 0 12px 32px rgba(0, 168, 150, 0.12);
   --shadow-floating: 0 20px 40px -10px rgba(15, 41, 38, 0.14);
@@ -28,7 +27,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Navbar ala Bobobox */
+/* === NAVBAR & MAIN LAYOUT === */
 .bobo-navbar {
   position: sticky;
   top: 0;
@@ -108,14 +107,13 @@ body {
   background: var(--bobo-teal-dark);
 }
 
-/* Main Container */
 .bobo-main {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px 64px;
 }
 
-/* Hero Section ala Bobobox */
+/* === HOME: HERO, BOOKING & CARDS === */
 .bobo-hero {
   position: relative;
   border-radius: 28px;
@@ -156,7 +154,6 @@ body {
   line-height: 1.6;
 }
 
-/* Floating Booking Widget ala Bobobox */
 .bobo-booking-bar {
   background: var(--bobo-surface);
   border-radius: 24px;
@@ -226,7 +223,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Filter Kategori Pill */
 .bobo-section-header {
   display: flex;
   justify-content: space-between;
@@ -261,7 +257,6 @@ body {
   border-color: var(--bobo-teal);
 }
 
-/* Grid & Card Kendaraan */
 .bobo-car-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -357,7 +352,6 @@ body {
   border-radius: 8px;
 }
 
-/* Split Panel (AI Advisor & GPS) */
 .bobo-split-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -372,208 +366,135 @@ body {
   border: 1px solid var(--bobo-border);
 }
 
-/* Responsive Media Queries */
-@media (max-width: 992px) {
-  .bobo-booking-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .bobo-split-grid {
-    grid-template-columns: 1fr;
-  }
+/* === LAYOUT REGISTER & LOGIN PERSIS REFERENSI === */
+.auth-container {
+  max-width: 1100px;
+  margin: 10px auto 40px; 
+  padding: 0 20px;
 }
 
-@media (max-width: 640px) {
-  .bobo-nav-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px 16px;
-  }
-  .bobo-nav-links {
-    justify-content: space-between;
-  }
-  .bobo-hero {
-    padding: 36px 20px 76px;
-    border-radius: 20px;
-  }
-  .bobo-hero h1 {
-    font-size: 26px;
-  }
-  .bobo-booking-bar {
-    margin: -44px 10px 28px;
-    padding: 16px;
-  }
-  .bobo-booking-grid {
-    grid-template-columns: 1fr;
-  }
-  .bobo-btn-primary {
-    width: 100%;
-  }
-}
-
-/* === BOBOBOX AUTHENTICATION (LOGIN & REGISTER) === */
-.bobo-breadcrumb {
+.auth-breadcrumb {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 40px;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
-  color: var(--bobo-muted);
-  margin-bottom: 36px;
 }
+.auth-breadcrumb a { color: #64748b; text-decoration: none; }
+.auth-breadcrumb a:hover { color: #00a896; }
+.auth-breadcrumb strong { color: #1e293b; font-weight: 600; }
 
-.bobo-breadcrumb a {
-  color: var(--bobo-muted);
-  text-decoration: none;
-}
-
-.bobo-breadcrumb a:hover {
-  color: var(--bobo-teal);
-}
-
-.bobo-breadcrumb strong {
-  color: var(--bobo-text);
-  font-weight: 700;
-}
-
-.bobo-auth-wrapper {
+.auth-grid {
   display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  gap: 64px;
+  grid-template-columns: 1fr 480px; /* Lebar form persis referensi */
+  gap: 80px;
   align-items: start;
-  padding: 8px 0 48px;
 }
 
-.bobo-feature-list {
+.feature-item {
   display: flex;
-  flex-direction: column;
-  gap: 34px;
-  padding-right: 16px;
+  gap: 24px;
+  margin-bottom: 40px;
 }
-
-.bobo-feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 22px;
-}
-
-.bobo-feature-icon {
-  width: 52px;
-  height: 52px;
+.feature-icon {
+  color: #00a896;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
+}
+.feature-text h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+.feature-text p {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.auth-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
+  border: 1px solid #f1f5f9;
+}
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.auth-header-icon {
+  width: 64px;
+  height: 64px;
+  background: #ffffff;
+  border: 2px solid #00a896;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bobo-teal);
 }
-
-.bobo-feature-text h4 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 800;
+.auth-header-text h2 {
+  margin: 0 0 6px 0;
+  font-size: 24px;
+  font-weight: 700;
   color: #1e293b;
 }
-
-.bobo-feature-text p {
+.auth-header-text p {
   margin: 0;
   font-size: 13.5px;
   color: #64748b;
-  line-height: 1.65;
 }
 
-.bobo-auth-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 44px 42px;
-  box-shadow: 0 14px 45px rgba(15, 41, 38, 0.07);
-  border: 1px solid #f1f5f9;
+.form-group {
+  margin-bottom: 20px;
 }
-
-.bobo-auth-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 32px;
-}
-
-.bobo-mascot-circle {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: #e6f6f4;
-  border: 2.5px solid #00a896;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.bobo-auth-header h2 {
-  margin: 0 0 6px;
-  font-size: 25px;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.bobo-auth-header p {
-  margin: 0;
-  font-size: 13.5px;
-  color: #475569;
-}
-
-.bobo-label-row {
+.label-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
-
-.bobo-label-row label {
+.label-row label {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
 }
-
-.bobo-teal-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: #008f7a;
-  text-decoration: none;
+.label-row button {
   background: none;
   border: none;
+  color: #00a896;
+  font-size: 13px;
   cursor: pointer;
+  font-weight: 600;
   padding: 0;
 }
-
-.bobo-teal-link:hover {
+.label-row button:hover {
   text-decoration: underline;
 }
 
-.bobo-auth-input-wrap {
+.form-input-wrap {
   position: relative;
-  margin-bottom: 20px;
 }
-
-.bobo-auth-input {
+.form-input {
   width: 100%;
   padding: 14px 16px;
-  border-radius: 10px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 14px;
-  color: #1e293b;
   outline: none;
+  color: #1e293b;
+  box-sizing: border-box;
   transition: border-color 0.2s;
 }
+.form-input::placeholder { color: #94a3b8; }
+.form-input:focus { border-color: #00a896; }
 
-.bobo-auth-input::placeholder {
-  color: #94a3b8;
-}
-
-.bobo-auth-input:focus {
-  border-color: #00a896;
-}
-
-.bobo-eye-btn {
+.eye-btn {
   position: absolute;
   right: 14px;
   top: 50%;
@@ -582,99 +503,105 @@ body {
   border: none;
   cursor: pointer;
   color: #475569;
-  display: flex;
-  align-items: center;
+  font-size: 16px;
 }
 
-.bobo-btn-auth-submit {
-  width: 100%;
-  padding: 14px;
-  border-radius: 10px;
-  border: none;
-  background: #84c7c0;
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  margin-top: 4px;
-}
-
-.bobo-btn-auth-submit:hover {
-  background: #00a896;
-}
-
-.bobo-divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: #64748b;
-  font-size: 13px;
-  margin: 26px 0;
-}
-
-.bobo-divider::before,
-.bobo-divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.bobo-divider span {
-  padding: 0 14px;
-}
-
-.bobo-btn-other {
-  width: 100%;
-  padding: 13px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #1e293b;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.bobo-btn-other:hover {
-  background: #f8fafc;
-}
-
-.bobo-role-selector {
+.role-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
 }
-
-.bobo-role-option {
-  padding: 11px 14px;
-  border-radius: 10px;
-  border: 1.5px solid #e2e8f0;
-  background: #f8fafc;
-  cursor: pointer;
-  text-align: center;
+.role-btn {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 13px;
-  font-weight: 700;
-  color: #475569;
-  transition: all 0.2s;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
 }
-
-.bobo-role-option.active {
+.role-btn.active {
   border-color: #00a896;
+  color: #00a896;
   background: #e6f6f4;
-  color: #007f71;
 }
 
-@media (max-width: 900px) {
-  .bobo-auth-wrapper {
-    grid-template-columns: 1fr;
-    gap: 36px;
-  }
-  .bobo-auth-card {
-    padding: 28px 22px;
-  }
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background: #84c7c0; /* Warna soft teal persis referensi */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.btn-submit:hover { background: #00a896; }
+.btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 28px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid #e2e8f0; }
+.divider span { padding: 0 16px; }
+
+.btn-outline {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #1e293b;
+}
+.btn-outline:hover { background: #f8fafc; }
+
+.auth-footer {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 14px;
+  color: #1e293b;
+}
+.auth-footer a { color: #00a896; font-weight: 700; text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
+
+.tnc-text {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  margin-top: 24px;
+  line-height: 1.6;
+}
+.tnc-text a { color: #00a896; text-decoration: none; font-weight: 500; }
+.tnc-text a:hover { text-decoration: underline; }
+
+/* === RESPONSIVE UTILITIES === */
+@media (max-width: 960px) {
+  .auth-grid { grid-template-columns: 1fr; gap: 40px; }
+  .auth-card { padding: 32px 24px; }
+}
+
+@media (max-width: 992px) {
+  .bobo-booking-grid { grid-template-columns: 1fr 1fr; }
+  .bobo-split-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .bobo-nav-container { flex-direction: column; align-items: stretch; padding: 12px 16px; }
+  .bobo-nav-links { justify-content: space-between; }
+  .bobo-hero { padding: 36px 20px 76px; border-radius: 20px; }
+  .bobo-hero h1 { font-size: 26px; }
+  .bobo-booking-bar { margin: -44px 10px 28px; padding: 16px; }
+  .bobo-booking-grid { grid-template-columns: 1fr; }
+  .bobo-btn-primary { width: 100%; }
 }
