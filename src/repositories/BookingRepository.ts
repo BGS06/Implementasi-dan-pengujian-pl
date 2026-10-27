@@ -1,73 +1,68 @@
-import { Booking } from '@/domain/models/Booking';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const IN_MEMORY_BOOKINGS: Booking[] = [
-  new Booking(
-    'bk-101',
-    'usr-1',
-    'car-1',
-    'Toyota Innova Zenix Hybrid',
-    '2026-10-28',
-    '2026-10-30',
-    2,
-    1170000,
-    'CONFIRMED'
-  )
-];
-
 export class BookingRepository {
-  async findAll(): Promise<Booking[]> {
-    if (!isSupabaseConfigured()) return IN_MEMORY_BOOKINGS;
+  private generateId(): string {
+    return 'B' + Math.floor(100 + Math.random() * 900).toString();
+  }
+
+  async findAll() {
+    if (!isSupabaseConfigured()) return [];
 
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, cars(brand, model)')
-      .order('created_at', { ascending: false });
+      .select('*, vehicles(brand, model)');
 
-    if (error || !data || data.length === 0) return IN_MEMORY_BOOKINGS;
+    if (error || !data) return [];
 
     return data.map((row) => {
       const start = new Date(row.start_date);
       const end = new Date(row.end_date);
       const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
-      const carName = row.cars ? `${row.cars.brand} ${row.cars.model}` : row.car_id;
+      // Menyesuaikan dengan struktur JOIN tabel vehicles
+      const carName = row.vehicles ? `${row.vehicles.brand} ${row.vehicles.model}` : row.vehicle_id;
 
-      return new Booking(
-        row.id,
-        row.user_id,
-        row.car_id,
-        carName,
-        row.start_date,
-        row.end_date,
-        days,
-        Number(row.total_price),
-        row.status
-      );
+      return {
+        id: row.id,
+        userId: row.customer_id,
+        carName: carName,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        totalDays: days,
+        totalPrice: 500000 * days, // Placeholder kalkulasi
+        status: row.status || 'CONFIRMED'
+      };
     });
   }
 
-  async create(booking: Booking): Promise<Booking> {
-    IN_MEMORY_BOOKINGS.unshift(booking);
-
-    if (isSupabaseConfigured()) {
-      await supabase.from('bookings').insert({
-        id: booking.id,
-        user_id: booking.userId,
-        car_id: booking.carId,
-        start_date: booking.startDate,
-        end_date: booking.endDate,
-        total_price: booking.totalPrice,
-        status: booking.status
-      });
-    }
-
-    return booking;
+  async create(booking: { userId: string; carId: string; startDate: string; endDate: string }) {
+    const id = this.generateId();
+    await supabase.from('bookings').insert({
+      id: id,
+      customer_id: booking.userId,
+      vehicle_id: booking.carId,
+      start_date: booking.startDate,
+      end_date: booking.endDate,
+      status: 'CONFIRMED'
+    });
+    return { id };
   }
 
-  // Tambahkan method ini di dalam class BookingRepository pada src/repositories/BookingRepository.ts:
-  async updateStatus(id: string, status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'): Promise<Booking | null> {
-    const item = IN_MEMORY_BOOKINGS.find((b) => b.id === id);
-    if (item) item.status = status;
-    return item || null;
+  // ==== INI ADALAH FUNGSI YANG HILANG ====
+  async updateStatus(id: string, status: string) {
+    if (!isSupabaseConfigured()) return null;
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Gagal update status booking:", error.message);
+      throw new Error(error.message);
+    }
+    
+    return data;
   }
 }

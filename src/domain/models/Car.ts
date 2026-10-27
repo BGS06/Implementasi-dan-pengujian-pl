@@ -1,17 +1,15 @@
-import { CarStatus } from '../interfaces';
-
 export class Car {
   constructor(
     public readonly id: string,
     public brand: string,
     public model: string,
     public plateNumber: string,
-    public category: 'MPV' | 'SUV' | 'EV' | 'SEDAN',
+    public category: string,
     public seats: number,
-    public transmission: 'Automatic' | 'Manual',
+    public transmission: string,
     public pricePerDay: number,
-    public status: CarStatus = 'AVAILABLE',
-    public imageUrl: string = '',
+    public status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' = 'AVAILABLE',
+    public imageUrl: string = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600',
     public latitude: number = -6.9733,
     public longitude: number = 107.6304
   ) {}

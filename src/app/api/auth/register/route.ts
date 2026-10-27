@@ -1,37 +1,26 @@
 import { NextResponse } from 'next/server';
-import { AuthService } from '@/services/AuthService';
-import { UserRole } from '@/domain/interfaces';
+import { UserRepository } from '@/repositories/UserRepository';
 
-const authService = new AuthService();
+const userRepo = new UserRepository();
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const role: UserRole = body.role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER';
+    
+    const existing = await userRepo.findByEmail(body.email);
+    if (existing) {
+      return NextResponse.json({ error: 'Email sudah terdaftar' }, { status: 400 });
+    }
 
-    const user = await authService.register({
-      name: body.name || 'Member YukJalan',
+    const newUser = await userRepo.create({
+      name: body.name,
       email: body.email,
-      phone: body.phone || '-',
-      password: body.password || '123456',
-      role
+      password_hash: body.password,
+      role: body.role
     });
 
-    return NextResponse.json(
-      {
-        data: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          membershipTier: user.membershipTier
-        }
-      },
-      { status: 201 }
-    );
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Gagal mendaftarkan akun';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ data: newUser }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

@@ -1,16 +1,26 @@
 import { NextResponse } from 'next/server';
 import { BookingService } from '@/services/BookingService';
 import { BookingRepository } from '@/repositories/BookingRepository';
+
+// Inisialisasi Service dan Repository
 const bookingService = new BookingService();
+const bookingRepo = new BookingRepository(); 
 
 export async function GET() {
   const bookings = await bookingService.getAllBookings();
   return NextResponse.json({ data: bookings });
 }
+
 export async function PATCH(request: Request) {
-  const { id, status } = await request.json();
-  const updated = await bookingRepo.updateStatus(id, status);
-  return NextResponse.json({ data: updated });
+  try {
+    const { id, status } = await request.json();
+    // Memanggil bookingRepo yang sudah diinisialisasi di atas
+    const updated = await bookingRepo.updateStatus(id, status);
+    return NextResponse.json({ data: updated });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal memperbarui status';
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -27,6 +37,4 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Gagal membuat booking';
     return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  
 }

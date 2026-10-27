@@ -1,107 +1,77 @@
 import { Car } from '@/domain/models/Car';
-import { IRepository } from '@/domain/interfaces';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const MOCK_CARS: Car[] = [
-  new Car(
-    'car-1',
-    'Toyota',
-    'Innova Zenix Hybrid',
-    'D 1201 YJ',
-    'MPV',
-    7,
-    'Automatic',
-    650000,
-    'AVAILABLE',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/2023_Toyota_Kijang_Innova_Zenix_2.0_Q_HV_TSS_Modellista_%28Indonesia%29_front_view.jpg/800px-2023_Toyota_Kijang_Innova_Zenix_2.0_Q_HV_TSS_Modellista_%28Indonesia%29_front_view.jpg',
-    -6.9733,
-    107.6304
-  ),
-  new Car(
-    'car-2',
-    'Hyundai',
-    'IONIQ 5 Signature',
-    'D 8821 EV',
-    'EV',
-    5,
-    'Automatic',
-    850000,
-    'AVAILABLE',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Hyundai_Ioniq_5_AWD_Techniq-Paket_%E2%80%93_f_31122021.jpg/800px-Hyundai_Ioniq_5_AWD_Techniq-Paket_%E2%80%93_f_31122021.jpg',
-    -6.9175,
-    107.6191
-  ),
-  new Car(
-    'car-3',
-    'Mitsubishi',
-    'Pajero Sport Dakar',
-    'D 1994 SUV',
-    'SUV',
-    7,
-    'Automatic',
-    750000,
-    'AVAILABLE',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/2021_Mitsubishi_Pajero_Sport_2.4_Dakar_Ultimate_4x2_%28Indonesia%29_front_view.jpg/800px-2021_Mitsubishi_Pajero_Sport_2.4_Dakar_Ultimate_4x2_%28Indonesia%29_front_view.jpg',
-    -6.8915,
-    107.6107
-  ),
-  new Car(
-    'car-4',
-    'Honda',
-    'Civic RS Turbo',
-    'D 4040 SR',
-    'SEDAN',
-    5,
-    'Automatic',
-    700000,
-    'AVAILABLE',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/2022_Honda_Civic_RS_%28FE%29_sedan_%28Indonesia%29_front_view.jpg/800px-2022_Honda_Civic_RS_%28FE%29_sedan_%28Indonesia%29_front_view.jpg',
-    -6.9500,
-    107.6250
-  )
-];
+export class CarRepository {
+  private generateId(): string {
+    return 'C' + Math.floor(100 + Math.random() * 900).toString();
+  }
 
-export class CarRepository implements IRepository<Car> {
   async findAll(): Promise<Car[]> {
-    if (!isSupabaseConfigured()) return MOCK_CARS;
+    if (!isSupabaseConfigured()) return [];
 
-    const { data, error } = await supabase.from('cars').select('*');
-    if (error || !data || data.length === 0) return MOCK_CARS;
+    // JOIN antara vehicles, cars (subclass), dan gps_coordinates
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select(`
+        *,
+        cars!inner(seat_capacity),
+        gps_coordinates(latitude, longitude)
+      `)
+      .order('id', { ascending: true });
 
-    return data.map(
-      (row) =>
-        new Car(
-          row.id,
-          row.brand,
-          row.model,
-          row.plate_number,
-          row.category,
-          row.seats,
-          row.transmission,
-          Number(row.price_per_day),
-          row.status,
-          row.image_url || MOCK_CARS[0].imageUrl,
-          row.latitude ?? -6.9733,
-          row.longitude ?? 107.6304
-        )
-    );
+    if (error || !data) return [];
+
+    return data.map((row) => {
+      const gps = Array.isArray(row.gps_coordinates) ? row.gps_coordinates[0] : row.gps_coordinates;
+      return new Car(
+        row.id,
+        row.brand,
+        row.model,
+        row.license_plate,
+        'CAR', 
+        row.cars?.seat_capacity || 4,
+        'Automatic', // Field default karena tidak ada di tabel vehicles
+        Number(row.base_rate_per_day),
+        row.status,
+        'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600',
+        gps?.latitude || -6.9733,
+        gps?.longitude || 107.6304
+      );
+    });
   }
 
-  async findById(id: string): Promise<Car | null> {
-    const cars = await this.findAll();
-    return cars.find((c) => c.id === id) || null;
+  async create(carData: Partial<Car>): Promise<Car | null> {
+    const vId = this.generateId();
+    
+    // 1. Insert ke tabel Parent (Vehicles)
+    await supabase.from('vehicles').insert({
+      id: vId,
+      brand: carData.brand,
+      model: carData.model,
+      license_plate: carData.plateNumber,
+      base_rate_per_day: carData.pricePerDay,
+      status: 'AVAILABLE'
+    });
+
+    // 2. Insert ke tabel Child (Cars)
+    await supabase.from('cars').insert({
+      vehicle_id: vId,
+      seat_capacity: carData.seats || 5
+    });
+
+    // 3. Insert ke komponen relasi (GPS)
+    await supabase.from('gps_coordinates').insert({
+      vehicle_id: vId,
+      latitude: -6.9733,
+      longitude: 107.6304,
+      speed_kmh: 0,
+      updated_at: new Date().toISOString()
+    });
+
+    return null; // reload via findAll di service
   }
 
-  // Tambahkan 2 method ini di dalam class CarRepository pada src/repositories/CarRepository.ts:
-  async create(car: Car): Promise<Car> {
-    MOCK_CARS.push(car);
-    return car;
-  }
-
-  async updateStatus(id: string, status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE'): Promise<Car | null> {
-    const car = MOCK_CARS.find((c) => c.id === id);
-    if (car) car.status = status;
-    return car || null;
+  async updateStatus(id: string, status: string) {
+    await supabase.from('vehicles').update({ status }).eq('id', id);
   }
 }
-
